@@ -15,6 +15,9 @@ import { goalProgressPercent, monthsToGoal } from "@/lib/goals";
 import type { SearchResult } from "@/lib/searchTool";
 
 export const runtime = "nodejs";
+// Kimi K2.6 replies + optional Brave-Search tool round-trip can take 20-40s.
+// Vercel Hobby caps at 60s, Pro allows longer.
+export const maxDuration = 60;
 
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 

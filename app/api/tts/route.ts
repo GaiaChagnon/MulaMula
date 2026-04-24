@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
+// TTS streaming can take up to ~30s for longer replies. Set headroom for Vercel.
+export const maxDuration = 60;
 
 const DEFAULT_MODEL = "google/gemini-3.1-flash-tts-preview";
 // Gemini TTS "Kore" is a natural, warm female voice. Overridable via env or request.
