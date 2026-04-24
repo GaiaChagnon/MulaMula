@@ -43,13 +43,48 @@ Without `OPENROUTER_API_KEY`, the app still works using the raw engine-generated
 - `lib/intentRouter.ts` — Rule-based intent routing from user text.
 - `lib/env.ts` — Reads `NEXT_PUBLIC_APP_URL`.
 
+## Git: mirror Rika52 from GaiaChagnon
+
+This repo is set up with **two remotes**:
+
+| Remote   | Typical URL | Role |
+|----------|-------------|------|
+| **`gaia`** | `https://github.com/GaiaChagnon/MulaMula.git` | **Source of truth** — pull / sync from here. |
+| **`origin`** | `https://github.com/Rika52/mulamula.git` (or SSH) | **Your mirror** — push here so it matches Gaia. |
+
+**One-shot sync (PowerShell)** — resets local `main` to `gaia/main`, then force-pushes to `origin`:
+
+```powershell
+npm run sync:mirror
+```
+
+Or run `scripts/sync-mirror-from-gaia.ps1` directly. This **drops any local commits on `main` that are not on Gaia’s `main`**, then makes `origin/main` identical to `gaia/main`.
+
+**SSH for `origin`:** if port 22 works on your network:
+
+```powershell
+git remote set-url origin git@github.com:Rika52/mulamula.git
+```
+
+If SSH times out, keep **HTTPS** for `origin` or use [GitHub’s SSH over port 443](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/using-ssh-over-the-https-port).
+
+**Manual sync without the script:**
+
+```powershell
+git fetch gaia
+git checkout main
+git reset --hard gaia/main
+git push origin main --force
+```
+
 ## Scripts
 
 ```bash
-npm run dev    # development server (Turbopack)
-npm run build  # production build
-npm run start  # run production build
-npm run lint   # ESLint
+npm run dev         # development server (Turbopack)
+npm run build       # production build
+npm run start       # run production build
+npm run lint        # ESLint
+npm run sync:mirror # reset main to Gaia and force-push to origin (see above)
 ```
 
 ## Node.js

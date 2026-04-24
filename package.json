@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "sync:mirror": "powershell -ExecutionPolicy Bypass -File ./scripts/sync-mirror-from-gaia.ps1"
   },
   "dependencies": {
     "framer-motion": "^12.38.0",
