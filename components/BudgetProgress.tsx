@@ -8,28 +8,31 @@ export function BudgetProgress({ data }: Props) {
   const total = data.monthlyBudget;
   const spent = data.monthToDateSpent;
   const pct = Math.min(100, Math.round((spent / Math.max(1, total)) * 100));
+  const over = spent > total;
 
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-5 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/80">
+    <div className="rounded-2xl border border-[#e0f2fe] bg-white p-5 shadow-sm">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+          <p className="text-[11px] font-semibold uppercase tracking-widest text-[#64748b]">
             Spending envelopes
           </p>
-          <p className="text-lg font-semibold text-zinc-900 dark:text-white">{pct}% used</p>
+          <p className={`text-lg font-bold tabular-nums ${over ? "text-rose-600" : "text-[#0f172a]"}`}>
+            {pct}% used
+          </p>
         </div>
-        <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
+        <span className="rounded-full border border-[#e0f2fe] bg-[#f0f9ff] px-3 py-1 text-xs font-medium text-[#0891b2]">
           {data.asOfISO.slice(0, 7)}
         </span>
       </div>
-      <div className="mt-4 h-3 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+      <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-[#e0f2fe]">
         <div
-          className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-teal-500"
+          className={`h-full rounded-full ${over ? "bg-gradient-to-r from-rose-400 to-amber-400" : "bg-gradient-to-r from-[#06b6d4] to-[#0ea5e9]"}`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-        ${spent.toLocaleString()} in budgeted categories · ${total.toLocaleString()} envelope cap
+      <p className="mt-2 text-xs text-[#64748b] tabular-nums">
+        ${spent.toLocaleString()} in budgeted categories &middot; ${total.toLocaleString()} envelope cap
       </p>
     </div>
   );

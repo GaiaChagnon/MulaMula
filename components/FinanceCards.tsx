@@ -12,41 +12,47 @@ export function FinanceCards({ data }: Props) {
   const left = budgetRemaining(data);
   const pace = data.monthToDateSpent / Math.max(1, data.monthlyBudget);
   const bills = upcomingBillsTotal(data);
+  const over = data.monthToDateSpent > data.monthlyBudget;
 
   return (
     <div className="grid gap-4 sm:grid-cols-3">
-      <div className="rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-emerald-50/80 p-5 shadow-sm dark:border-zinc-700 dark:from-zinc-900 dark:to-emerald-950/30">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+      {/* Envelopes MTD */}
+      <div className="rounded-2xl border border-[#e0f2fe] bg-gradient-to-br from-white to-[#ecfeff] p-5 shadow-sm">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#64748b]">
           Envelopes (MTD)
         </p>
-        <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+        <p className="mt-2 text-2xl font-bold tracking-tight text-[#0f172a] tabular-nums">
           {money(data.monthToDateSpent, data.currency)}
         </p>
-        <p className="mt-1 text-xs text-zinc-500">
-          of {money(data.monthlyBudget, data.currency)} budgeted · as of {data.asOfISO}
+        <p className="mt-1 text-xs text-[#64748b]">
+          of {money(data.monthlyBudget, data.currency)} budgeted &middot; as of {data.asOfISO}
         </p>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-700">
+        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#e0f2fe]">
           <div
-            className="h-full rounded-full bg-emerald-500 transition-all"
+            className={`h-full rounded-full transition-all ${over ? "bg-gradient-to-r from-rose-400 to-amber-400" : "bg-gradient-to-r from-[#06b6d4] to-[#0ea5e9]"}`}
             style={{ width: `${Math.min(100, Math.round(pace * 100))}%` }}
           />
         </div>
       </div>
-      <div className="rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-sky-50/80 p-5 shadow-sm dark:border-zinc-700 dark:from-zinc-900 dark:to-sky-950/25">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+
+      {/* Envelope headroom */}
+      <div className="rounded-2xl border border-[#e0f2fe] bg-gradient-to-br from-white to-[#f0f9ff] p-5 shadow-sm">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#64748b]">
           Envelope headroom
         </p>
-        <p className="mt-2 text-2xl font-semibold tracking-tight text-emerald-700 dark:text-emerald-400">
+        <p className={`mt-2 text-2xl font-bold tracking-tight tabular-nums ${left > 0 ? "text-[#0891b2]" : "text-rose-500"}`}>
           {money(left, data.currency)}
         </p>
-        <p className="mt-1 text-xs text-zinc-500">Income (mock) {money(data.income, data.currency)}/mo</p>
+        <p className="mt-1 text-xs text-[#64748b]">Income {money(data.income, data.currency)}/mo</p>
       </div>
-      <div className="rounded-2xl border border-zinc-200/80 bg-gradient-to-br from-white to-amber-50/70 p-5 shadow-sm dark:border-zinc-700 dark:from-zinc-900 dark:to-amber-950/20">
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">Balance</p>
-        <p className="mt-2 text-2xl font-semibold tracking-tight text-zinc-900 dark:text-white">
+
+      {/* Balance */}
+      <div className="rounded-2xl border border-[#e0f2fe] bg-gradient-to-br from-white to-[#f0f9ff] p-5 shadow-sm">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#64748b]">Balance</p>
+        <p className="mt-2 text-2xl font-bold tracking-tight text-[#0f172a] tabular-nums">
           {money(data.balance, data.currency)}
         </p>
-        <p className="mt-1 text-xs text-zinc-500">Upcoming bills ~{money(bills, data.currency)}</p>
+        <p className="mt-1 text-xs text-[#64748b]">Upcoming bills ~{money(bills, data.currency)}</p>
       </div>
     </div>
   );

@@ -62,10 +62,14 @@ export function VoiceButton({ onTranscript, onListeningChange, disabled }: Props
   if (!supported) {
     return (
       <span
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-zinc-300 text-[10px] text-zinc-400 dark:border-zinc-600"
-        title="Voice input not supported in this browser"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-dashed border-[#e0f2fe] text-[10px] text-[#94a3b8]"
+        title="Voice input not supported in this browser (try Chrome, Edge, or Safari)"
       >
-        —
+        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+          <rect x="9" y="3" width="6" height="11" rx="3" />
+          <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+          <line x1="4" y1="4" x2="20" y2="20" />
+        </svg>
       </span>
     );
   }
@@ -78,13 +82,21 @@ export function VoiceButton({ onTranscript, onListeningChange, disabled }: Props
       aria-pressed={listening}
       disabled={disabled}
       onClick={toggle}
-      className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border text-xs font-semibold transition ${
+      className={`relative flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border transition ${
         listening
-          ? "border-red-400 bg-red-50 text-red-600 ring-2 ring-red-200 dark:border-red-500/50 dark:bg-red-950/40 dark:text-red-300 dark:ring-red-900/50"
-          : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-emerald-300 hover:text-emerald-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:border-emerald-500/40"
+          ? "border-red-400 bg-red-50 text-red-600 ring-2 ring-red-200"
+          : "border-[#e0f2fe] bg-[#f0f9ff] text-[#0ea5e9] hover:border-[#06b6d4] hover:bg-[#ecfeff]"
       } disabled:opacity-40`}
     >
-      {listening ? "Stop" : "Mic"}
+      {listening && (
+        <span className="absolute inset-0 animate-ping rounded-xl bg-red-300/40" aria-hidden />
+      )}
+      <svg className="relative h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+        <rect x="9" y="3" width="6" height="11" rx="3" />
+        <path d="M5 11a7 7 0 0 0 14 0" />
+        <line x1="12" y1="18" x2="12" y2="21" />
+        <line x1="9" y1="21" x2="15" y2="21" />
+      </svg>
     </button>
   );
 }

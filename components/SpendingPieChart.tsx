@@ -23,18 +23,18 @@ export function SpendingPieChart({ data }: Props) {
 
   if (slices.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-8 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/80">
+      <div className="rounded-2xl border border-[#e0f2fe] bg-white p-8 text-center text-sm text-[#64748b]">
         No spending in {data.asOfISO.slice(0, 7)} yet.
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200/80 bg-white/90 p-4 text-zinc-900 shadow-sm dark:border-zinc-700 dark:bg-zinc-900/80 dark:text-zinc-100">
-      <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+    <div className="rounded-2xl border border-[#e0f2fe] bg-white p-5 text-[#0f172a] shadow-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-widest text-[#64748b]">
         Spending by category
       </p>
-      <p className="text-sm text-zinc-600 dark:text-zinc-300">This month · {data.asOfISO.slice(0, 7)}</p>
+      <p className="text-xs text-[#94a3b8]">This month &middot; {data.asOfISO.slice(0, 7)}</p>
       <div className="mx-auto mt-2 h-[min(52vw,280px)] w-full max-w-[320px] sm:h-72">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
