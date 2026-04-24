@@ -65,6 +65,25 @@ function stripForSpeech(text: string): string {
     .trim();
 }
 
+/** Clean up Kimi's occasional markdown so it renders cleanly in plain-text bubbles. */
+function cleanReply(text: string): string {
+  return text
+    // Remove escaped dollar signs: \$45 -> $45
+    .replace(/\\\$/g, "$")
+    // Strip **bold** / __bold__ markdown
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    .replace(/__([^_]+)__/g, "$1")
+    // Strip residual lone asterisks/underscores used for emphasis
+    .replace(/(?<!\w)[*_](?=\S)|(?<=\S)[*_](?!\w)/g, "")
+    // Strip leading "# " header markers
+    .replace(/^\s*#{1,6}\s+/gm, "")
+    // Backticks
+    .replace(/`([^`]+)`/g, "$1")
+    // Collapse 3+ newlines
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
 export function ChatPanel({ userData, goals }: Props) {
   const [messages, setMessages] = useState<Msg[]>([
     {
@@ -247,10 +266,14 @@ export function ChatPanel({ userData, goals }: Props) {
         if (!res.ok) {
           throw new Error(`Server error ${res.status}`);
         }
-        const data = (await res.json()) as { reply?: string; intent?: string };
-        const reply = typeof data.reply === "string" ? data.reply : "Something went wrong.";
+        const data = (await res.json()) as { reply?: string; intent?: string; ai_error?: string };
+        const rawReply = typeof data.reply === "string" ? data.reply : "Something went wrong.";
+        const reply = cleanReply(rawReply);
         const durationMs = Math.max(1, Math.round(performance.now() - startRef.current));
-        const thought = data.intent ? `Routed intent: ${data.intent.replace(/_/g, " ")} · ran engine calculations, composed a grounded reply.` : undefined;
+        const thoughtParts: string[] = [];
+        if (data.intent) thoughtParts.push(`Routed intent: ${data.intent.replace(/_/g, " ")}`);
+        if (data.ai_error) thoughtParts.push(`AI error (used fallback): ${data.ai_error}`);
+        const thought = thoughtParts.length ? `${thoughtParts.join(" · ")}. Ran engine calculations, composed a grounded reply.` : undefined;
         setMessages((m) => {
           const next = [...m, { role: "assistant" as const, text: reply, thought, durationMs }];
           speak(reply, next.length - 1);

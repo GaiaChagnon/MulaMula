@@ -70,8 +70,18 @@ export async function POST(req: Request) {
       typeof body.format === "string" && body.format ? body.format : isGemini ? "pcm" : "mp3";
     const responseFormat = isGemini ? "pcm" : requestedFormat;
 
-    const instructions =
-      "Speak in English with a pronounced German accent — hard consonants, rolled 'r', 'w' pronounced as 'v', 'th' pronounced as 'z'. Confident, direct, a little stern, a little flirty. Medium pace. Natural breathing and inflection, not robotic.";
+    const instructions = [
+      "You are Greta, a German finance advisor speaking English with a HEAVY, unmistakable German accent.",
+      "Voice: confident, direct, slightly stern, a little flirty. Warm chest tone, not monotone.",
+      "Accent rules (enforce ALL of them, consistently):",
+      "- 'w' → 'v' sound ('what' → 'vat', 'with' → 'vith')",
+      "- 'th' → 'z' or hard 't' ('the' → 'ze', 'this' → 'zis', 'think' → 'tink')",
+      "- Final 'ing' slightly clipped ('spending' → 'spendink')",
+      "- Rolled / trilled 'r' at the start of words",
+      "- Hard, crisp consonants; short vowels",
+      "- Give German words ('mein Schatz', 'Achtung', 'Ja', 'Nein') their full native pronunciation",
+      "Prosody: medium-slow pace, slight stress on numbers and warnings, natural breathing between sentences. Avoid robotic cadence.",
+    ].join(" ");
 
     const payload = {
       model,

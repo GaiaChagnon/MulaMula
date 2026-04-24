@@ -25,9 +25,24 @@ const CUT_RE = /cut back|save more|trim|reduce spending|where can i/i;
 const MONTH_PROJ_RE = /this month|month spend|end of month|project|forecast/i;
 
 function extractDollars(text: string): number | undefined {
-  const m = text.match(/\$\s*([\d,]+(?:\.\d{1,2})?)/);
-  if (!m) return undefined;
-  return parseFloat(m[1].replace(/,/g, ""));
+  // Prefer $-prefixed amounts
+  const dollar = text.match(/\$\s*([\d,]+(?:\.\d{1,2})?)/);
+  if (dollar) return parseFloat(dollar[1].replace(/,/g, ""));
+
+  // Bare amounts with a currency-ish keyword or purchase context ("3000 euros", "for 3000")
+  const kw = text.match(/\b([\d,]+(?:\.\d{1,2})?)\s*(?:usd|eur|euros?|dollars?|bucks)\b/i);
+  if (kw) return parseFloat(kw[1].replace(/,/g, ""));
+
+  const forAmount = text.match(/\bfor\s+([\d,]{2,}(?:\.\d{1,2})?)\b/i);
+  if (forAmount) return parseFloat(forAmount[1].replace(/,/g, ""));
+
+  // Last resort: any standalone number ≥ 10 (skip trivial ones like "3 times")
+  const bare = text.match(/\b([\d]{2,}[\d,]*(?:\.\d{1,2})?)\b/);
+  if (bare) {
+    const v = parseFloat(bare[1].replace(/,/g, ""));
+    if (v >= 10) return v;
+  }
+  return undefined;
 }
 
 function extractCategoryHint(text: string): string | undefined {
@@ -51,6 +66,10 @@ export function routeIntent(raw: string): RoutedIntent {
   if (BUDGET_LEFT_RE.test(text)) return { intent: "budget_left" };
   if (WEEK_RE.test(text) && /spend|afford|much can|how much/i.test(text)) {
     return { intent: "weekly_safe_spend" };
+  }
+  // Purchase check — fires on any "buy/purchase/get/spend on" + amount combination
+  if (/\b(buy|purchase|pay|spend|get|grab|afford)\b/i.test(text) && amount != null) {
+    return { intent: "purchase_check", amount };
   }
   if ((BUY_RE.test(text) || /\$\d/.test(text)) && /buy|jacket|item|purchase|worth/i.test(text)) {
     return { intent: "purchase_check", amount: amount ?? 150 };

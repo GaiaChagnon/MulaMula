@@ -37,6 +37,7 @@ Substance — this is critical:
 Format (speed matters):
 - Default target: 60–110 words total. Only go longer if the question truly requires it.
 - 1–2 short paragraphs, or 3–5 tight bullets. Never both.
+- Plain text only. NO markdown. No **asterisks**, no _underscores_, no # headers, no backticks. Write dollar amounts as $45 (unescaped, no backslash). The UI does not render markdown and any formatting will appear literally to the user.
 - No meta-commentary, no "as an AI" disclaimers, no "here's my response". No preamble.`;
 
 const FORMAT_SYSTEM_PROMPT = `You polish finance advisor replies into Greta's voice — a blunt, confident, a-bit-stern, a-bit-flirty German advisor for MoneyTalkz.
@@ -50,6 +51,7 @@ Strict rules:
 - Keep the same meaning and facts; improve clarity, flow, and tone only.
 - Prefer short paragraphs; keep bullets if present.
 - Max 4 short paragraphs.
+- Plain text only. NO markdown. No **asterisks**, no headers. Write $45, not \\$45.
 - No meta-commentary and no "as an AI" disclaimers.`;
 
 function openRouterClient(): OpenAI | null {
@@ -203,9 +205,8 @@ async function formatReplyWithOpenRouter(draft: string): Promise<string | null> 
   const res = await client.chat.completions.create({
     model,
     temperature: 0.25,
-    max_tokens: 260,
-    // Typed separately because the OpenAI types don't expose the OpenRouter-only `reasoning` field.
-    ...( { reasoning: { effort: "low" } } as unknown as Record<string, unknown> ),
+    max_tokens: 700,
+    ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
     messages: [
       { role: "system", content: FORMAT_SYSTEM_PROMPT },
       {
@@ -261,6 +262,10 @@ async function generateRichReply(
   const model = resolveModel();
 
   const stateBlock = buildStateBlock(userData, goals);
+  // One-string system prompt. Kimi (Moonshot) caches the identical prefix server-side
+  // across turns automatically, so as long as PERSONA + STATE are byte-identical between
+  // calls in the same session, subsequent turns hit their cache. We deliberately keep
+  // the volatile user message OUT of the system prompt so the cache stays warm.
   const systemPrompt = `${PERSONA}\n\n${stateBlock}`;
 
   const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
@@ -270,25 +275,37 @@ async function generateRichReply(
       content:
         `User message: ${message}\n\n` +
         `A deterministic draft from our finance engine (you may use, improve, or replace it — but stay grounded in STATE):\n<draft>\n${draft}\n</draft>\n\n` +
-        "Answer the user directly using the STATE block above. Pull specific numbers, categories, merchants and dates. Give an actionable recommendation with trade-offs. Respond as Greta.",
+        "Answer the user directly using the STATE block above. Pull specific numbers, categories, merchants and dates. Give an actionable recommendation with trade-offs. Respond as Greta. Plain text only — no markdown.",
     },
   ];
 
-  const createParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming & {
-    reasoning?: { effort?: "low" | "medium" | "high"; exclude?: boolean };
-  } = {
+  // Kimi burns invisible reasoning tokens against max_tokens; with a tight cap the model
+  // hits "length" before producing any user-facing text. Disable reasoning and keep
+  // max_tokens comfortable for a 60–110-word answer.
+  const createParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
     model,
     temperature: 0.45,
-    max_tokens: 360,
+    max_tokens: 900,
     messages,
-    // OpenRouter forwards this to providers that support it (Kimi, GPT-5, etc.)
-    // "low" cuts latency dramatically on reasoning models while still giving grounded answers.
-    reasoning: { effort: "low" },
+    ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
     ...(useBraveSearch ? { tools: [SEARCH_TOOL], tool_choice: "auto" } : {}),
   };
 
   const firstResponse = await client.chat.completions.create(createParams);
   const firstChoice = firstResponse.choices[0];
+
+  if (!firstChoice?.message?.content || firstChoice.message.content.trim() === "") {
+    console.warn(
+      "[/api/chat] first response empty — choice:",
+      JSON.stringify({
+        finish_reason: firstChoice?.finish_reason,
+        content_length: firstChoice?.message?.content?.length ?? 0,
+        has_tool_calls: Boolean(firstChoice?.message?.tool_calls?.length),
+        usage: firstResponse.usage,
+        model: firstResponse.model,
+      })
+    );
+  }
 
   if (
     useBraveSearch &&
@@ -317,8 +334,8 @@ async function generateRichReply(
       const secondResponse = await client.chat.completions.create({
         model,
         temperature: 0.45,
-        max_tokens: 360,
-        ...( { reasoning: { effort: "low" } } as unknown as Record<string, unknown> ),
+        max_tokens: 900,
+        ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
         messages: followUpMessages,
       });
 
@@ -352,20 +369,24 @@ export async function POST(req: Request) {
     const payload = composeAssistantReply(engine, routed);
     let reply = payload.reply;
 
+    let richReplyError: unknown = null;
     try {
       const richReply = await generateRichReply(message, reply, activeUserData, activeGoals);
       if (richReply) {
         reply = richReply;
       } else {
+        console.warn("[/api/chat] generateRichReply returned null — falling back to format pass");
         const formatted = await formatReplyWithOpenRouter(reply);
         if (formatted) reply = formatted;
       }
-    } catch {
+    } catch (err) {
+      richReplyError = err;
+      console.error("[/api/chat] generateRichReply threw:", err instanceof Error ? err.message : err);
       try {
         const formatted = await formatReplyWithOpenRouter(reply);
         if (formatted) reply = formatted;
-      } catch {
-        /* keep original draft */
+      } catch (err2) {
+        console.error("[/api/chat] formatReply also threw:", err2 instanceof Error ? err2.message : err2);
       }
     }
 
@@ -373,8 +394,10 @@ export async function POST(req: Request) {
       reply,
       intent: payload.intent,
       usedOpenRouter: Boolean(process.env.OPENROUTER_API_KEY),
+      ...(richReplyError ? { ai_error: richReplyError instanceof Error ? richReplyError.message : "unknown" } : {}),
     });
-  } catch {
+  } catch (err) {
+    console.error("[/api/chat] top-level error:", err instanceof Error ? err.message : err);
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
 }
