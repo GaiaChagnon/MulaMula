@@ -164,7 +164,7 @@ export function DashboardShell() {
               animate="center"
               exit="exit"
             >
-              <InsightsTab snapshot={snapshot} userData={userData} />
+              <InsightsTab snapshot={snapshot} userData={userData} goals={goals} />
             </motion.div>
           )}
           {activeTab === "goals" && (

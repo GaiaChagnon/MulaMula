@@ -205,7 +205,7 @@ async function formatReplyWithOpenRouter(draft: string): Promise<string | null> 
   const res = await client.chat.completions.create({
     model,
     temperature: 0.25,
-    max_tokens: 700,
+    max_tokens: 1000,
     ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
     messages: [
       { role: "system", content: FORMAT_SYSTEM_PROMPT },
@@ -285,7 +285,7 @@ async function generateRichReply(
   const createParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
     model,
     temperature: 0.45,
-    max_tokens: 900,
+    max_tokens: 1000,
     messages,
     ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
     ...(useBraveSearch ? { tools: [SEARCH_TOOL], tool_choice: "auto" } : {}),
@@ -334,7 +334,7 @@ async function generateRichReply(
       const secondResponse = await client.chat.completions.create({
         model,
         temperature: 0.45,
-        max_tokens: 900,
+        max_tokens: 1000,
         ...( { reasoning: { enabled: false, exclude: true } } as unknown as Record<string, unknown> ),
         messages: followUpMessages,
       });

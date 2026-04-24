@@ -4,15 +4,18 @@ import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
 import { SpendingTrendChart } from "@/components/dashboard/SpendingTrendChart";
 import { BehaviorInsights } from "@/components/dashboard/BehaviorInsights";
+import { InsightsOverview } from "@/components/dashboard/InsightsOverview";
 import { BudgetCategoryBars } from "@/components/BudgetCategoryBars";
 import { BudgetProgress } from "@/components/BudgetProgress";
 import { SpendingPieChart } from "@/components/SpendingPieChart";
 import type { FinanceSnapshot } from "@/lib/financeEngine";
 import type { UserData } from "@/lib/mockData";
+import type { Goal } from "@/lib/goals";
 
 type Props = {
   snapshot: FinanceSnapshot;
   userData: UserData;
+  goals?: Goal[];
 };
 
 const container: Variants = {
@@ -25,7 +28,7 @@ const row: Variants = {
   show: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
 };
 
-export function InsightsTab({ snapshot, userData }: Props) {
+export function InsightsTab({ snapshot, userData, goals = [] }: Props) {
   return (
     <motion.div
       variants={container}
@@ -33,6 +36,10 @@ export function InsightsTab({ snapshot, userData }: Props) {
       animate="show"
       className="space-y-6"
     >
+      <motion.div variants={row}>
+        <InsightsOverview userData={userData} goals={goals} />
+      </motion.div>
+
       <motion.div variants={row}>
         <SpendingTrendChart transactions={userData.transactions} />
       </motion.div>
