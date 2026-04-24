@@ -105,6 +105,27 @@ export function ChatPanel({ userData, goals }: Props) {
   }, []);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUnlockedRef = useRef(false);
+  const [voiceBlocked, setVoiceBlocked] = useState(false);
+
+  // Prime the audio pipeline on the first click/tap inside the panel so iOS Safari
+  // and other strict autoplay browsers will allow later async .play() calls.
+  const unlockAudio = useCallback(() => {
+    if (audioUnlockedRef.current || typeof window === "undefined") return;
+    try {
+      const silentWav = new Audio(
+        "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+      );
+      silentWav.volume = 0;
+      silentWav.play().then(() => {
+        audioUnlockedRef.current = true;
+      }).catch(() => {
+        /* still try later; no-op */
+      });
+    } catch {
+      /* ignore */
+    }
+  }, []);
 
   const speakViaBrowser = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
@@ -165,7 +186,14 @@ export function ChatPanel({ userData, goals }: Props) {
           URL.revokeObjectURL(url);
           setSpeakingIdx(null);
         };
-        await audio.play();
+        try {
+          await audio.play();
+          setVoiceBlocked(false);
+        } catch {
+          // Autoplay likely blocked by the browser. Surface a hint — the user can click the play button.
+          setVoiceBlocked(true);
+          setSpeakingIdx(null);
+        }
       } catch {
         speakViaBrowser(cleaned);
         // Browser speech: approximate "done" timing via duration heuristic
@@ -204,6 +232,7 @@ export function ChatPanel({ userData, goals }: Props) {
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed || loading) return;
+      unlockAudio();
       setError(null);
       setMessages((m) => [...m, { role: "user", text: trimmed }]);
       setInput("");
@@ -238,10 +267,11 @@ export function ChatPanel({ userData, goals }: Props) {
         setLoading(false);
       }
     },
-    [loading, userData, goals, speak]
+    [loading, userData, goals, speak, unlockAudio]
   );
 
   const toggleVoice = useCallback(() => {
+    unlockAudio();
     setVoiceOn((on) => {
       const next = !on;
       try {
@@ -249,10 +279,12 @@ export function ChatPanel({ userData, goals }: Props) {
       } catch {}
       if (!next) {
         stopSpeaking();
+      } else {
+        setVoiceBlocked(false);
       }
       return next;
     });
-  }, [stopSpeaking]);
+  }, [stopSpeaking, unlockAudio]);
 
   const currentThought = useMemo(() => THOUGHT_STEPS[thinkingStep], [thinkingStep]);
 
@@ -342,6 +374,7 @@ export function ChatPanel({ userData, goals }: Props) {
                     <button
                       type="button"
                       onClick={() => {
+                        unlockAudio();
                         if (speakingIdx === i) {
                           stopSpeaking();
                         } else {
@@ -353,7 +386,7 @@ export function ChatPanel({ userData, goals }: Props) {
                       className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border transition ${
                         speakingIdx === i
                           ? "border-[#06b6d4] bg-[#06b6d4] text-white"
-                          : "border-[#e0f2fe] bg-white text-[#0ea5e9] opacity-0 group-hover/bubble:opacity-100 hover:border-[#06b6d4] hover:bg-[#ecfeff]"
+                          : "border-[#e0f2fe] bg-white text-[#0ea5e9] hover:border-[#06b6d4] hover:bg-[#ecfeff]"
                       }`}
                     >
                       <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
@@ -428,6 +461,21 @@ export function ChatPanel({ userData, goals }: Props) {
       {error && (
         <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
           {error}
+        </div>
+      )}
+
+      {/* Voice autoplay-blocked hint */}
+      {voiceBlocked && (
+        <div className="flex items-center justify-between gap-2 border-t border-amber-100 bg-amber-50 px-4 py-2 text-xs text-amber-700">
+          <span>Your browser blocked autoplay — tap the speaker icon on the last reply to hear it.</span>
+          <button
+            type="button"
+            onClick={() => setVoiceBlocked(false)}
+            className="text-amber-600 hover:text-amber-800"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
         </div>
       )}
 

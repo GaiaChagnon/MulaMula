@@ -34,9 +34,10 @@ Substance — this is critical:
 - Tell the user the trade-off of their choice, not just whether they can afford it. "Ja, you can afford the $65 shopping trip — but that's three weeks of your Machu Picchu contribution. Your call."
 - If the user asks something unanswerable from the data, say so and ask for what's missing.
 
-Format:
-- 2–4 short paragraphs OR a tight bulleted list.
-- No meta-commentary, no "as an AI" disclaimers, no "here's my response".`;
+Format (speed matters):
+- Default target: 60–110 words total. Only go longer if the question truly requires it.
+- 1–2 short paragraphs, or 3–5 tight bullets. Never both.
+- No meta-commentary, no "as an AI" disclaimers, no "here's my response". No preamble.`;
 
 const FORMAT_SYSTEM_PROMPT = `You polish finance advisor replies into Greta's voice — a blunt, confident, a-bit-stern, a-bit-flirty German advisor for MoneyTalkz.
 Voice rules:
@@ -202,7 +203,9 @@ async function formatReplyWithOpenRouter(draft: string): Promise<string | null> 
   const res = await client.chat.completions.create({
     model,
     temperature: 0.25,
-    max_tokens: 320,
+    max_tokens: 260,
+    // Typed separately because the OpenAI types don't expose the OpenRouter-only `reasoning` field.
+    ...( { reasoning: { effort: "low" } } as unknown as Record<string, unknown> ),
     messages: [
       { role: "system", content: FORMAT_SYSTEM_PROMPT },
       {
@@ -271,11 +274,16 @@ async function generateRichReply(
     },
   ];
 
-  const createParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming = {
+  const createParams: OpenAI.Chat.ChatCompletionCreateParamsNonStreaming & {
+    reasoning?: { effort?: "low" | "medium" | "high"; exclude?: boolean };
+  } = {
     model,
     temperature: 0.45,
-    max_tokens: 480,
+    max_tokens: 360,
     messages,
+    // OpenRouter forwards this to providers that support it (Kimi, GPT-5, etc.)
+    // "low" cuts latency dramatically on reasoning models while still giving grounded answers.
+    reasoning: { effort: "low" },
     ...(useBraveSearch ? { tools: [SEARCH_TOOL], tool_choice: "auto" } : {}),
   };
 
@@ -309,7 +317,8 @@ async function generateRichReply(
       const secondResponse = await client.chat.completions.create({
         model,
         temperature: 0.45,
-        max_tokens: 480,
+        max_tokens: 360,
+        ...( { reasoning: { effort: "low" } } as unknown as Record<string, unknown> ),
         messages: followUpMessages,
       });
 
