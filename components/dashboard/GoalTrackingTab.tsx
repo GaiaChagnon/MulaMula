@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import type { Variants } from "framer-motion";
-import { GoalProgress } from "@/components/GoalProgress";
 import { BehaviorInsights } from "@/components/dashboard/BehaviorInsights";
 import type { FinanceSnapshot } from "@/lib/financeEngine";
 import type { UserData } from "@/lib/mockData";
@@ -127,11 +126,6 @@ export function GoalTrackingTab({ snapshot, userData, goals }: Props) {
           </p>
         </motion.div>
       )}
-
-      {/* Savings jars from finance data */}
-      <motion.div variants={item}>
-        <GoalProgress data={snapshot} />
-      </motion.div>
 
       {/* Behavior insights */}
       <motion.div variants={item}>

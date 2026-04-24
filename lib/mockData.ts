@@ -81,11 +81,11 @@ export const userData: UserData = {
 
   jars: [
     {
-      name: "Summer Trip",
-      target: 1500,
-      saved: 300,
-      monthlyContribution: 200,
-      monthsLeft: 4,
+      name: "Trip to Machu Picchu",
+      target: 2400,
+      saved: 420,
+      monthlyContribution: 220,
+      monthsLeft: 9,
     },
     {
       name: "Emergency Fund",
@@ -100,6 +100,13 @@ export const userData: UserData = {
       saved: 200,
       monthlyContribution: 250,
       monthsLeft: 3,
+    },
+    {
+      name: "Summer Trip",
+      target: 1500,
+      saved: 300,
+      monthlyContribution: 200,
+      monthsLeft: 4,
     },
   ],
 

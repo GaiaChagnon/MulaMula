@@ -23,9 +23,37 @@ const itemVariants = {
 };
 
 const STATS = [
-  { label: "Questions answered", value: "every one" },
-  { label: "Bank connections", value: "zero" },
-  { label: "Data leaves your device", value: "never" },
+  {
+    label: "Questions answered",
+    value: "Every one",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+        <path d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0z" />
+        <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14" />
+        <circle cx="12" cy="17" r="0.5" fill="currentColor" />
+      </svg>
+    ),
+  },
+  {
+    label: "Bank connections",
+    value: "Zero",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+        <rect x="3" y="5" width="18" height="14" rx="2" />
+        <path d="M3 10h18M7 15h3" />
+      </svg>
+    ),
+  },
+  {
+    label: "Data leaves your device",
+    value: "Never",
+    icon: (
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4">
+        <path d="M12 3 4 6v6c0 5 3.5 8.5 8 9 4.5-.5 8-4 8-9V6l-8-3z" />
+        <path d="m9 12 2 2 4-4" />
+      </svg>
+    ),
+  },
 ];
 
 export function LandingHero() {
@@ -100,14 +128,21 @@ export function LandingHero() {
         {/* Stats strip */}
         <motion.div
           variants={itemVariants}
-          className="mx-auto mt-14 grid max-w-2xl grid-cols-3 gap-4 rounded-2xl border border-[#e0f2fe] bg-white/70 px-4 py-5 backdrop-blur-sm sm:gap-10 sm:px-8"
+          className="mx-auto mt-14 grid max-w-3xl grid-cols-1 divide-y divide-[#e0f2fe] rounded-2xl border border-[#e0f2fe] bg-white/80 p-2 shadow-sm backdrop-blur-md sm:grid-cols-3 sm:divide-x sm:divide-y-0"
         >
           {STATS.map((stat) => (
-            <div key={stat.label} className="text-left sm:text-center">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-[#94a3b8] sm:text-xs">
-                {stat.label}
-              </p>
-              <p className="mt-1 text-base font-bold text-[#0f172a] sm:text-lg">{stat.value}</p>
+            <div key={stat.label} className="flex items-center gap-3 px-5 py-4 sm:flex-col sm:items-center sm:gap-2 sm:py-5 sm:text-center">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ecfeff] text-[#06b6d4]">
+                {stat.icon}
+              </span>
+              <div className="flex flex-col sm:items-center">
+                <p className="text-xl font-bold tracking-tight text-[#0f172a] sm:text-2xl">
+                  {stat.value}
+                </p>
+                <p className="mt-0.5 text-[11px] font-medium uppercase tracking-[0.14em] text-[#64748b]">
+                  {stat.label}
+                </p>
+              </div>
             </div>
           ))}
         </motion.div>

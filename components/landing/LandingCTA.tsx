@@ -1,11 +1,31 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { motion } from "framer-motion";
+import { ensureDemoAccount } from "@/lib/auth";
+import { useUser } from "@/context/UserContext";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 export function LandingCTA() {
+  const router = useRouter();
+  const { refreshData } = useUser();
+  const [loading, setLoading] = useState(false);
+
+  async function handleDemo() {
+    if (loading) return;
+    setLoading(true);
+    try {
+      await ensureDemoAccount();
+      refreshData();
+      router.push("/dashboard");
+    } catch {
+      setLoading(false);
+    }
+  }
+
   return (
     <section className="relative overflow-hidden bg-white py-24 px-6">
       <motion.div
@@ -41,12 +61,14 @@ export function LandingCTA() {
           >
             Create your plan
           </Link>
-          <Link
-            href="/login"
-            className="rounded-xl border border-[#e0f2fe] bg-white px-8 py-3.5 text-base font-semibold text-[#0f172a] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#06b6d4] hover:text-[#06b6d4]"
+          <button
+            type="button"
+            onClick={handleDemo}
+            disabled={loading}
+            className="rounded-xl border border-[#e0f2fe] bg-white px-8 py-3.5 text-base font-semibold text-[#0f172a] transition-all duration-200 hover:-translate-y-0.5 hover:border-[#06b6d4] hover:text-[#06b6d4] disabled:opacity-60"
           >
-            Try the demo account
-          </Link>
+            {loading ? "Loading demo…" : "Try the demo account"}
+          </button>
         </div>
       </motion.div>
     </section>

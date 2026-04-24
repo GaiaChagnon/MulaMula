@@ -112,7 +112,7 @@ export function DashboardShell() {
         </div>
 
         {/* ── Tab bar ── */}
-        <div className="mx-auto flex max-w-6xl gap-6 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl gap-2 px-4 pt-1 sm:px-6">
           {TABS.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -120,15 +120,17 @@ export function DashboardShell() {
                 key={tab.id}
                 type="button"
                 onClick={() => handleTabChange(tab.id)}
-                className={`relative px-1 pb-3 pt-1 text-sm font-medium transition ${
-                  isActive ? "text-[#06b6d4]" : "text-[#64748b] hover:text-[#0f172a]"
+                className={`relative rounded-t-lg px-4 pb-3.5 pt-2 text-sm font-semibold tracking-tight transition ${
+                  isActive
+                    ? "text-[#06b6d4]"
+                    : "text-[#64748b] hover:bg-[#f0f9ff]/60 hover:text-[#0f172a]"
                 }`}
               >
                 {tab.label}
                 {isActive && (
                   <motion.span
                     layoutId="tab-underline"
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full bg-[#06b6d4]"
+                    className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-[#06b6d4]"
                     transition={{ type: "spring", stiffness: 400, damping: 30 }}
                   />
                 )}
@@ -139,7 +141,7 @@ export function DashboardShell() {
       </header>
 
       {/* ── Main content ── */}
-      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-10 sm:px-6">
         <AnimatePresence mode="wait" custom={direction}>
           {activeTab === "overview" && (
             <motion.div
