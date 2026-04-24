@@ -122,44 +122,67 @@ export function ChatPanel({ userData, goals }: Props) {
     window.speechSynthesis.speak(u);
   }, []);
 
-  const speak = useCallback(async (text: string) => {
-    if (!voiceOn) return;
-    const cleaned = stripForSpeech(text);
-    if (!cleaned) return;
+  const [speakingIdx, setSpeakingIdx] = useState<number | null>(null);
 
-    // Stop any in-flight audio / browser speech
+  const stopSpeaking = useCallback(() => {
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
     }
     if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+    speakingRef.current = false;
+    setSpeakingIdx(null);
+  }, []);
 
-    // Try server TTS (OpenRouter gpt-4o-mini-tts with German-accent instructions). Fall back to browser speech.
-    try {
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ input: cleaned }),
-      });
-      if (!res.ok) throw new Error(`tts ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audioRef.current = audio;
-      speakingRef.current = true;
-      audio.onended = () => {
-        speakingRef.current = false;
-        URL.revokeObjectURL(url);
-      };
-      audio.onerror = () => {
-        speakingRef.current = false;
-        URL.revokeObjectURL(url);
-      };
-      await audio.play();
-    } catch {
-      speakViaBrowser(cleaned);
-    }
-  }, [voiceOn, speakViaBrowser]);
+  const speakText = useCallback(
+    async (text: string, index: number | null = null) => {
+      const cleaned = stripForSpeech(text);
+      if (!cleaned) return;
+
+      // Stop any in-flight audio / browser speech
+      stopSpeaking();
+      setSpeakingIdx(index);
+
+      try {
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ input: cleaned }),
+        });
+        if (!res.ok) throw new Error(`tts ${res.status}`);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audioRef.current = audio;
+        speakingRef.current = true;
+        audio.onended = () => {
+          speakingRef.current = false;
+          URL.revokeObjectURL(url);
+          setSpeakingIdx(null);
+        };
+        audio.onerror = () => {
+          speakingRef.current = false;
+          URL.revokeObjectURL(url);
+          setSpeakingIdx(null);
+        };
+        await audio.play();
+      } catch {
+        speakViaBrowser(cleaned);
+        // Browser speech: approximate "done" timing via duration heuristic
+        setTimeout(() => setSpeakingIdx(null), Math.max(2500, cleaned.length * 60));
+      }
+    },
+    [speakViaBrowser, stopSpeaking]
+  );
+
+  // Auto-speak when voice is on (used by send()).
+  const speak = useCallback(
+    (text: string, index: number | null = null) => {
+      if (!voiceOn) return;
+      void speakText(text, index);
+    },
+    [voiceOn, speakText]
+  );
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -199,8 +222,11 @@ export function ChatPanel({ userData, goals }: Props) {
         const reply = typeof data.reply === "string" ? data.reply : "Something went wrong.";
         const durationMs = Math.max(1, Math.round(performance.now() - startRef.current));
         const thought = data.intent ? `Routed intent: ${data.intent.replace(/_/g, " ")} · ran engine calculations, composed a grounded reply.` : undefined;
-        setMessages((m) => [...m, { role: "assistant", text: reply, thought, durationMs }]);
-        speak(reply);
+        setMessages((m) => {
+          const next = [...m, { role: "assistant" as const, text: reply, thought, durationMs }];
+          speak(reply, next.length - 1);
+          return next;
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Network error";
         setError(`Failed to get a response: ${msg}`);
@@ -222,15 +248,11 @@ export function ChatPanel({ userData, goals }: Props) {
         localStorage.setItem(VOICE_PREF_KEY, next ? "1" : "0");
       } catch {}
       if (!next) {
-        if (audioRef.current) {
-          audioRef.current.pause();
-          audioRef.current = null;
-        }
-        if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+        stopSpeaking();
       }
       return next;
     });
-  }, []);
+  }, [stopSpeaking]);
 
   const currentThought = useMemo(() => THOUGHT_STEPS[thinkingStep], [thinkingStep]);
 
@@ -315,8 +337,37 @@ export function ChatPanel({ userData, goals }: Props) {
                       </p>
                     </details>
                   )}
-                  <div className="rounded-2xl rounded-bl-md border-l-2 border-[#06b6d4] bg-[#f0f9ff] px-4 py-3 text-sm text-[#0f172a] whitespace-pre-wrap shadow-sm">
+                  <div className="group/bubble relative rounded-2xl rounded-bl-md border-l-2 border-[#06b6d4] bg-[#f0f9ff] px-4 py-3 pr-12 text-sm text-[#0f172a] whitespace-pre-wrap shadow-sm">
                     {msg.text}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (speakingIdx === i) {
+                          stopSpeaking();
+                        } else {
+                          void speakText(msg.text, i);
+                        }
+                      }}
+                      aria-label={speakingIdx === i ? "Stop playback" : "Play this reply in Greta's voice"}
+                      title={speakingIdx === i ? "Stop playback" : "Play this reply"}
+                      className={`absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full border transition ${
+                        speakingIdx === i
+                          ? "border-[#06b6d4] bg-[#06b6d4] text-white"
+                          : "border-[#e0f2fe] bg-white text-[#0ea5e9] opacity-0 group-hover/bubble:opacity-100 hover:border-[#06b6d4] hover:bg-[#ecfeff]"
+                      }`}
+                    >
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+                        {speakingIdx === i ? (
+                          <rect x="6" y="6" width="12" height="12" rx="2" fill="currentColor" />
+                        ) : (
+                          <>
+                            <path d="M11 5 6 9H2v6h4l5 4V5z" />
+                            <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                            <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+                          </>
+                        )}
+                      </svg>
+                    </button>
                   </div>
                 </div>
               ) : (

@@ -2,8 +2,42 @@ import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 
-const DEFAULT_MODEL = "openai/gpt-4o-mini-tts";
-const DEFAULT_VOICE = "shimmer"; // warm female voice; handles German interjections well
+const DEFAULT_MODEL = "google/gemini-3.1-flash-tts-preview";
+// Gemini TTS "Kore" is a natural, warm female voice. Overridable via env or request.
+const DEFAULT_VOICE = "Kore";
+
+// Gemini returns raw 16-bit PCM mono at 24kHz. We wrap it in a minimal WAV header so browsers can play it.
+function wrapPcmInWav(pcm: Uint8Array, sampleRate = 24000, channels = 1, bitsPerSample = 16): Uint8Array {
+  const byteRate = (sampleRate * channels * bitsPerSample) / 8;
+  const blockAlign = (channels * bitsPerSample) / 8;
+  const dataSize = pcm.byteLength;
+
+  const header = new ArrayBuffer(44);
+  const view = new DataView(header);
+
+  const writeString = (offset: number, str: string) => {
+    for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+  };
+
+  writeString(0, "RIFF");
+  view.setUint32(4, 36 + dataSize, true);
+  writeString(8, "WAVE");
+  writeString(12, "fmt ");
+  view.setUint32(16, 16, true); // Subchunk1Size (PCM)
+  view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
+  view.setUint16(22, channels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, byteRate, true);
+  view.setUint16(32, blockAlign, true);
+  view.setUint16(34, bitsPerSample, true);
+  writeString(36, "data");
+  view.setUint32(40, dataSize, true);
+
+  const out = new Uint8Array(44 + dataSize);
+  out.set(new Uint8Array(header), 0);
+  out.set(pcm, 44);
+  return out;
+}
 
 export async function POST(req: Request) {
   try {
@@ -22,20 +56,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "TTS unavailable" }, { status: 503 });
     }
 
-    const voice = typeof body.voice === "string" && body.voice ? body.voice : DEFAULT_VOICE;
-    const format = typeof body.format === "string" && body.format ? body.format : "mp3";
+    const voice =
+      typeof body.voice === "string" && body.voice
+        ? body.voice
+        : process.env.OPENROUTER_TTS_VOICE?.trim() || DEFAULT_VOICE;
     const model = process.env.OPENROUTER_TTS_MODEL?.trim() || DEFAULT_MODEL;
+    const isGemini = model.toLowerCase().includes("gemini");
 
-    // Guide the voice to sound German by prefixing an instructional SSML-like hint.
-    // gpt-4o-mini-tts accepts an `instructions` field for tone/accent steering.
+    // Gemini TTS requires pcm; other providers accept mp3/wav.
+    const requestedFormat =
+      typeof body.format === "string" && body.format ? body.format : isGemini ? "pcm" : "mp3";
+    const responseFormat = isGemini ? "pcm" : requestedFormat;
+
     const instructions =
-      "Speak in English with a pronounced German accent — hard consonants, rolled 'r', 'w' pronounced as 'v', 'th' pronounced as 'z'. Confident, direct, a little stern, a little flirty. Medium pace.";
+      "Speak in English with a pronounced German accent — hard consonants, rolled 'r', 'w' pronounced as 'v', 'th' pronounced as 'z'. Confident, direct, a little stern, a little flirty. Medium pace. Natural breathing and inflection, not robotic.";
 
     const payload = {
       model,
       input,
       voice,
-      response_format: format,
+      response_format: responseFormat,
       instructions,
     };
 
@@ -62,7 +102,23 @@ export async function POST(req: Request) {
     }
 
     const arrayBuffer = await res.arrayBuffer();
-    const contentType = format === "mp3" ? "audio/mpeg" : res.headers.get("content-type") || "application/octet-stream";
+
+    if (responseFormat === "pcm") {
+      const wav = wrapPcmInWav(new Uint8Array(arrayBuffer));
+      const out = new ArrayBuffer(wav.byteLength);
+      new Uint8Array(out).set(wav);
+      return new NextResponse(out, {
+        headers: {
+          "Content-Type": "audio/wav",
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+
+    const contentType =
+      responseFormat === "mp3"
+        ? "audio/mpeg"
+        : res.headers.get("content-type") || "application/octet-stream";
 
     return new NextResponse(arrayBuffer, {
       headers: {

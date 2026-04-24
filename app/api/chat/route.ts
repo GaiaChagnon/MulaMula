@@ -67,7 +67,7 @@ function openRouterClient(): OpenAI | null {
   });
 }
 
-const DEFAULT_MODEL = "moonshotai/kimi-k2.5";
+const DEFAULT_MODEL = "moonshotai/kimi-k2.6";
 
 function resolveModel(): string {
   return process.env.OPENROUTER_MODEL?.trim() || DEFAULT_MODEL;
