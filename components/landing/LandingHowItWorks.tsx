@@ -204,7 +204,7 @@ function StepVisual({ step }: { step: number }) {
       transition={{ duration: 0.5, ease: EASE }}
       className="rounded-2xl border border-[#e0f2fe] bg-white p-5 shadow-sm"
     >
-      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#64748b]">MulaMula AI</p>
+      <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#64748b]">MoneyTalkz AI</p>
       <div className="space-y-2">
         <motion.div
           initial={{ opacity: 0, x: 12 }}

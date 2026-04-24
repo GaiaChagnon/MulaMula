@@ -16,7 +16,7 @@ export default function SignupPage() {
             <path d="M7 10l2.5 2.5L14 7" />
           </svg>
         </span>
-        Mula<span className="text-[#06b6d4]">Mula</span>
+        Money<span className="text-[#06b6d4]">Talkz</span>
       </Link>
 
       <div className="relative w-full max-w-md">

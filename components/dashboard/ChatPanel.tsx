@@ -42,7 +42,7 @@ const msgVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.12 } },
 };
 
-const VOICE_PREF_KEY = "mula_voice_on";
+const VOICE_PREF_KEY = "mtk_voice_on";
 
 function pickGermanFemaleVoice(): SpeechSynthesisVoice | null {
   if (typeof window === "undefined") return null;
@@ -69,7 +69,7 @@ export function ChatPanel({ userData, goals }: Props) {
   const [messages, setMessages] = useState<Msg[]>([
     {
       role: "assistant",
-      text: "Servus. I'm your MulaMula assistant — direct, honest, a little German. Ask me anything about your budget, spending, or goals. I'll be blunt, ja?",
+      text: "Servus, mein Schatz. I'm Greta, your MoneyTalkz advisor. I can see your envelopes, bills, and goals — so ask me anything specific. I'll tell you the trade-off, not just the yes or no.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -104,9 +104,10 @@ export function ChatPanel({ userData, goals }: Props) {
     };
   }, []);
 
-  const speak = useCallback((text: string) => {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const speakViaBrowser = useCallback((text: string) => {
     if (typeof window === "undefined" || !window.speechSynthesis) return;
-    if (!voiceOn) return;
     const u = new SpeechSynthesisUtterance(stripForSpeech(text));
     u.lang = "de-DE";
     if (voiceRef.current) u.voice = voiceRef.current;
@@ -119,7 +120,46 @@ export function ChatPanel({ userData, goals }: Props) {
       speakingRef.current = false;
     };
     window.speechSynthesis.speak(u);
-  }, [voiceOn]);
+  }, []);
+
+  const speak = useCallback(async (text: string) => {
+    if (!voiceOn) return;
+    const cleaned = stripForSpeech(text);
+    if (!cleaned) return;
+
+    // Stop any in-flight audio / browser speech
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    if (typeof window !== "undefined") window.speechSynthesis?.cancel();
+
+    // Try server TTS (OpenRouter gpt-4o-mini-tts with German-accent instructions). Fall back to browser speech.
+    try {
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ input: cleaned }),
+      });
+      if (!res.ok) throw new Error(`tts ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audioRef.current = audio;
+      speakingRef.current = true;
+      audio.onended = () => {
+        speakingRef.current = false;
+        URL.revokeObjectURL(url);
+      };
+      audio.onerror = () => {
+        speakingRef.current = false;
+        URL.revokeObjectURL(url);
+      };
+      await audio.play();
+    } catch {
+      speakViaBrowser(cleaned);
+    }
+  }, [voiceOn, speakViaBrowser]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -181,8 +221,12 @@ export function ChatPanel({ userData, goals }: Props) {
       try {
         localStorage.setItem(VOICE_PREF_KEY, next ? "1" : "0");
       } catch {}
-      if (!next && typeof window !== "undefined") {
-        window.speechSynthesis?.cancel();
+      if (!next) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current = null;
+        }
+        if (typeof window !== "undefined") window.speechSynthesis?.cancel();
       }
       return next;
     });
@@ -198,7 +242,7 @@ export function ChatPanel({ userData, goals }: Props) {
           <div className="flex items-center gap-2">
             <span className="h-2 w-2 rounded-full bg-[#06b6d4]" />
             <p className="text-xs font-semibold uppercase tracking-widest text-[#64748b]">
-              Finance Assistant
+              Greta &middot; MoneyTalkz Advisor
             </p>
           </div>
           <button

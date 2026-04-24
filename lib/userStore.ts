@@ -1,9 +1,9 @@
 import type { UserData, Transaction, BudgetEntry } from "./mockData";
 import { userData as mockUserData } from "./mockData";
 
-const PROFILE_KEY = "mula_profile";
-const TRANSACTIONS_KEY = "mula_transactions";
-const BUDGETS_KEY = "mula_budgets";
+const PROFILE_KEY = "mtk_profile";
+const TRANSACTIONS_KEY = "mtk_transactions";
+const BUDGETS_KEY = "mtk_budgets";
 
 type UserProfile = {
   balance: number;

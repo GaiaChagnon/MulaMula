@@ -4,8 +4,8 @@ export type StoredUser = {
   createdAt: string;
 };
 
-const USERS_KEY = "mula_users";
-const SESSION_KEY = "mula_session";
+const USERS_KEY = "mtk_users";
+const SESSION_KEY = "mtk_session";
 
 export async function sha256(text: string): Promise<string> {
   const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text));

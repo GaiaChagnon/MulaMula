@@ -8,7 +8,7 @@ export type Goal = {
   createdAt: string;
 };
 
-const GOALS_KEY = "mula_goals";
+const GOALS_KEY = "mtk_goals";
 
 export function saveGoals(goals: Goal[]): void {
   localStorage.setItem(GOALS_KEY, JSON.stringify(goals));

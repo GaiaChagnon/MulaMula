@@ -18,7 +18,7 @@ export default function Home() {
               </svg>
             </span>
             <span className="text-lg font-bold tracking-tight text-[#0f172a]">
-              Mula<span className="text-[#06b6d4]">Mula</span>
+              Money<span className="text-[#06b6d4]">Talkz</span>
             </span>
           </Link>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -51,7 +51,7 @@ export default function Home() {
 
       <footer className="border-t border-[#e0f2fe] bg-white px-6 py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 text-sm text-[#94a3b8] sm:flex-row">
-          <p>&copy; {new Date().getFullYear()} MulaMula. Demo project — not financial advice.</p>
+          <p>&copy; {new Date().getFullYear()} MoneyTalkz. Demo project — not financial advice.</p>
           <p className="text-xs">Built with Next.js &middot; Tailwind &middot; OpenRouter</p>
         </div>
       </footer>

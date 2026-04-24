@@ -11,7 +11,7 @@ export default function OnboardingPage() {
             href="/"
             className="text-xl font-bold tracking-tight text-[#0f172a]"
           >
-            Mula<span className="text-[#06b6d4]">Mula</span>
+            Money<span className="text-[#06b6d4]">Talkz</span>
           </Link>
           <Link
             href="/login"

@@ -93,7 +93,7 @@ export function DashboardShell() {
                 />
               </svg>
             </span>
-            <span className="text-lg font-bold tracking-tight text-[#06b6d4]">MulaMula</span>
+            <span className="text-lg font-bold tracking-tight text-[#06b6d4]">MoneyTalkz</span>
           </div>
 
           {/* User + logout */}

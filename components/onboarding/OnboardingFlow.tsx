@@ -277,7 +277,7 @@ export function OnboardingFlow() {
   const [direction, setDirection] = useState(1);
 
   // Guard: if someone opens /onboarding without an account yet, send them to /signup.
-  if (typeof window !== "undefined" && !user && !localStorage.getItem("mula_session")) {
+  if (typeof window !== "undefined" && !user && !localStorage.getItem("mtk_session")) {
     router.replace("/signup");
   }
 

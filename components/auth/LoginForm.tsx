@@ -57,7 +57,7 @@ export function LoginForm() {
       className="w-full max-w-md rounded-2xl border border-[#e0f2fe] bg-white p-8 shadow-sm"
     >
       <h1 className="mb-1 text-2xl font-bold text-[#0f172a]">Welcome back</h1>
-      <p className="mb-8 text-sm text-[#64748b]">Log in to your MulaMula account</p>
+      <p className="mb-8 text-sm text-[#64748b]">Log in to your MoneyTalkz account</p>
 
       <form onSubmit={handleSubmit} className="space-y-5" noValidate>
         {/* Username */}

@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MulaMula — Talk to Your Money",
-  description: "AI-powered student finance assistant. Budget smarter, save faster.",
+  title: "MoneyTalkz — Talk to Your Money",
+  description: "MoneyTalkz gives students a blunt, German-accented AI advisor that sees every envelope, bill, and goal. Ask out loud; get answers grounded in your numbers.",
 };
 
 export default function RootLayout({
